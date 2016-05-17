@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/http/httputil"
 	"strings"
 	"syscall"
 	"time"
@@ -24,17 +25,34 @@ type RetryPolicy interface {
 	DelayFor(uint) (time.Duration, bool)
 }
 
-//go:generate counterfeiter . RoundTripper
+//go:generate counterfeiter . Retryer
+//common interface between HijakcRetry and StreamRetry
+type Retryer interface {
+	RoundTrip(*http.Request) (*http.Response, error)
+}
 
-type RoundTripper interface {
-	RoundTrip(request *http.Request) (*http.Response, error)
+type HijackRetry struct {
+	Client httputil.ClientConn
+}
+
+func (r *HijackRetry) RoundTrip(request *http.Request) (*http.Response, error) {
+	return r.Client.Do(request)
+}
+
+//TODO: circular reference
+type StreamRetry struct {
+	Client Retryer
+}
+
+func (r *StreamRetry) RoundTrip(request *http.Request) (*http.Response, error) {
+	return r.Client.RoundTrip(request)
 }
 
 type RetryRoundTripper struct {
-	Logger       lager.Logger
-	Sleeper      Sleeper
-	RetryPolicy  RetryPolicy
-	RoundTripper RoundTripper
+	Logger      lager.Logger
+	Sleeper     Sleeper
+	RetryPolicy RetryPolicy
+	Retryer     Retryer
 }
 
 type RetryReadCloser struct {
@@ -59,8 +77,9 @@ func (d *RetryRoundTripper) RoundTrip(request *http.Request) (*http.Response, er
 	for {
 		var response *http.Response
 
-		response, err = d.RoundTripper.RoundTrip(request)
-
+		//response, err = d.RoundTripper.RoundTrip(request)
+		//response, err = d.ConnClient.Retry(request)
+		response, err = d.Retryer.RoundTrip(request)
 		if err == nil {
 			return response, nil
 		}

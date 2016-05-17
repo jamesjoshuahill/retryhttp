@@ -8,11 +8,11 @@ import (
 	"github.com/concourse/retryhttp"
 )
 
-type FakeRoundTripper struct {
-	RoundTripStub        func(request *http.Request) (*http.Response, error)
+type FakeRetryer struct {
+	RoundTripStub        func(*http.Request) (*http.Response, error)
 	roundTripMutex       sync.RWMutex
 	roundTripArgsForCall []struct {
-		request *http.Request
+		arg1 *http.Request
 	}
 	roundTripReturns struct {
 		result1 *http.Response
@@ -20,32 +20,32 @@ type FakeRoundTripper struct {
 	}
 }
 
-func (fake *FakeRoundTripper) RoundTrip(request *http.Request) (*http.Response, error) {
+func (fake *FakeRetryer) RoundTrip(arg1 *http.Request) (*http.Response, error) {
 	fake.roundTripMutex.Lock()
 	fake.roundTripArgsForCall = append(fake.roundTripArgsForCall, struct {
-		request *http.Request
-	}{request})
+		arg1 *http.Request
+	}{arg1})
 	fake.roundTripMutex.Unlock()
 	if fake.RoundTripStub != nil {
-		return fake.RoundTripStub(request)
+		return fake.RoundTripStub(arg1)
 	} else {
 		return fake.roundTripReturns.result1, fake.roundTripReturns.result2
 	}
 }
 
-func (fake *FakeRoundTripper) RoundTripCallCount() int {
+func (fake *FakeRetryer) RoundTripCallCount() int {
 	fake.roundTripMutex.RLock()
 	defer fake.roundTripMutex.RUnlock()
 	return len(fake.roundTripArgsForCall)
 }
 
-func (fake *FakeRoundTripper) RoundTripArgsForCall(i int) *http.Request {
+func (fake *FakeRetryer) RoundTripArgsForCall(i int) *http.Request {
 	fake.roundTripMutex.RLock()
 	defer fake.roundTripMutex.RUnlock()
-	return fake.roundTripArgsForCall[i].request
+	return fake.roundTripArgsForCall[i].arg1
 }
 
-func (fake *FakeRoundTripper) RoundTripReturns(result1 *http.Response, result2 error) {
+func (fake *FakeRetryer) RoundTripReturns(result1 *http.Response, result2 error) {
 	fake.RoundTripStub = nil
 	fake.roundTripReturns = struct {
 		result1 *http.Response
@@ -53,4 +53,4 @@ func (fake *FakeRoundTripper) RoundTripReturns(result1 *http.Response, result2 e
 	}{result1, result2}
 }
 
-var _ retryhttp.RoundTripper = new(FakeRoundTripper)
+var _ retryhttp.Retryer = new(FakeRetryer)
