@@ -17,21 +17,25 @@ type ExponentialRetryPolicy struct {
 
 const maxRetryDelay = 16 * time.Second
 
-func (policy ExponentialRetryPolicy) DelayFor(attempts uint) (time.Duration, bool) {
-	// buckle up
-	attemptsBackingOff := uint(math.Log2(maxRetryDelay.Seconds()))
-	timeSpentMaxedOut := policy.Timeout - (1<<(attemptsBackingOff+1))*time.Second
-	attemptsMaxedOut := uint(float64(timeSpentMaxedOut) / float64(maxRetryDelay))
-
-	maxAttempts := attemptsMaxedOut + attemptsBackingOff
-	if attempts > maxAttempts {
+func (policy ExponentialRetryPolicy) DelayFor(attempt uint) (time.Duration, bool) {
+	if sumDelaysIncluding(attempt)+delayFor(attempt+1) > policy.Timeout {
 		return 0, false
 	}
+	return delayFor(attempt), true
+}
 
-	exponentialDelay := (1 << (attempts - 1)) * time.Second
-	if exponentialDelay > maxRetryDelay {
-		return maxRetryDelay, true
+func delayFor(attempt uint) time.Duration {
+	seconds := math.Pow(2, float64(attempt-1))
+	delay := time.Duration(seconds) * time.Second
+	if delay > maxRetryDelay {
+		return maxRetryDelay
 	}
+	return delay
+}
 
-	return exponentialDelay, true
+func sumDelaysIncluding(currentAttempt uint) (delay time.Duration) {
+	for attempt := currentAttempt; attempt > 0; attempt-- {
+		delay += delayFor(attempt)
+	}
+	return
 }
