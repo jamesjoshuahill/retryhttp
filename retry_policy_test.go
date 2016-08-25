@@ -58,7 +58,8 @@ var _ = Describe("ExponentialRetryPolicy", func() {
 	Context("with a 1 second timeout", func() {
 		BeforeEach(func() {
 			policy = retryhttp.ExponentialRetryPolicy{
-				MaxBackOff: 1 * time.Second,
+				MaxBackOff:              1 * time.Second,
+				MaxDelayBetweenAttempts: 16 * time.Second,
 			}
 		})
 
@@ -73,7 +74,8 @@ var _ = Describe("ExponentialRetryPolicy", func() {
 	Context("with a 3 second timeout", func() {
 		BeforeEach(func() {
 			policy = retryhttp.ExponentialRetryPolicy{
-				MaxBackOff: 3 * time.Second,
+				MaxBackOff:              3 * time.Second,
+				MaxDelayBetweenAttempts: 16 * time.Second,
 			}
 		})
 
@@ -89,7 +91,8 @@ var _ = Describe("ExponentialRetryPolicy", func() {
 	Context("with a 7 second timeout", func() {
 		BeforeEach(func() {
 			policy = retryhttp.ExponentialRetryPolicy{
-				MaxBackOff: 7 * time.Second,
+				MaxBackOff:              7 * time.Second,
+				MaxDelayBetweenAttempts: 16 * time.Second,
 			}
 		})
 
@@ -106,7 +109,8 @@ var _ = Describe("ExponentialRetryPolicy", func() {
 	Context("with a 5 minute timeout", func() {
 		BeforeEach(func() {
 			policy = retryhttp.ExponentialRetryPolicy{
-				MaxBackOff: 5 * time.Minute,
+				MaxBackOff:              5 * time.Minute,
+				MaxDelayBetweenAttempts: 16 * time.Second,
 			}
 		})
 

@@ -12,30 +12,29 @@ type RetryPolicy interface {
 }
 
 type ExponentialRetryPolicy struct {
-	MaxBackOff time.Duration
+	MaxBackOff              time.Duration
+	MaxDelayBetweenAttempts time.Duration
 }
-
-const maxRetryDelay = 16 * time.Second
 
 func (policy ExponentialRetryPolicy) DelayFor(attempt uint) (time.Duration, bool) {
-	if sumDelaysIncluding(attempt) > policy.MaxBackOff {
+	if policy.sumDelaysIncluding(attempt) > policy.MaxBackOff {
 		return 0, false
 	}
-	return delayFor(attempt), true
+	return policy.delayFor(attempt), true
 }
 
-func delayFor(attempt uint) time.Duration {
+func (policy ExponentialRetryPolicy) delayFor(attempt uint) time.Duration {
 	seconds := math.Pow(2, float64(attempt-1))
 	delay := time.Duration(seconds) * time.Second
-	if delay > maxRetryDelay {
-		return maxRetryDelay
+	if delay > policy.MaxDelayBetweenAttempts {
+		return policy.MaxDelayBetweenAttempts
 	}
 	return delay
 }
 
-func sumDelaysIncluding(currentAttempt uint) (delay time.Duration) {
+func (policy ExponentialRetryPolicy) sumDelaysIncluding(currentAttempt uint) (delay time.Duration) {
 	for attempt := currentAttempt; attempt > 0; attempt-- {
-		delay += delayFor(attempt)
+		delay += policy.delayFor(attempt)
 	}
 	return
 }
