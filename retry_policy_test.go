@@ -31,12 +31,6 @@ var _ = Describe("ExponentialRetryPolicy", func() {
 		delay, keepRetrying = policy.DelayFor(attempts)
 	})
 
-	type row struct {
-		attempts     uint
-		delay        time.Duration
-		keepRetrying bool
-	}
-
 	for _, row := range []row{
 		{0, 0 * time.Second, true},
 		{1, 1 * time.Second, true},
